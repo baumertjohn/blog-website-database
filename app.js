@@ -15,11 +15,16 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-let posts = [];
+// let posts = []; // This was a blank list to start the project.
+const initialPosts = [
+  { title: "Post One", content: "This is the first post with some content."},
+  { title: "Post Two", content: "This is the second post with some more content"},
+  { title: "Post Three", content: "Here is the third post with more content to add to the webpage."},
+];
 
 mongoose.connect("mongodb://0.0.0.0:27017/blogDB");
 
-const blogsSchema = new mongoose.Schema({ name: String });
+const blogsSchema = new mongoose.Schema({ title: String, content: String });
 const Blog = mongoose.model("Blog", blogsSchema);
 
 Blog.find(function (err, blogs){
@@ -27,16 +32,18 @@ Blog.find(function (err, blogs){
     console.log(err);
   } else {
     if (blogs.length === 0) {
-      Blog.create({name: homeStartingContent}, function (err){});
+      // Blog.create({name: homeStartingContent}, function (err){});
+      Blog.insertMany(initialPosts, function(err){});
     }
   }
 });
 
 app.get("/", function(req, res){
-  res.render("home", {
-    startingContent: homeStartingContent,
-    posts: posts
-    });
+  Blog.find(function (err, posts){
+    if (!err) { 
+    res.render("home", { startingContent: homeStartingContent, posts: posts });
+    }
+  });
 });
 
 app.get("/about", function(req, res){
@@ -57,8 +64,8 @@ app.post("/compose", function(req, res){
     content: req.body.postBody
   };
 
-  posts.push(post);
-
+  // posts.push(post);
+  Blog.create(post, function(err){});
   res.redirect("/");
 
 });
